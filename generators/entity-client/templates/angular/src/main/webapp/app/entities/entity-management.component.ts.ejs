@@ -47,7 +47,8 @@ export class <%= entityAngularName %>Component implements OnInit, OnDestroy {
     <%_ } _%>
 
     ngOnInit() {
-        this.loadAll();
+        // this.loadAll();
+        this.loadFindBy();
         this.principal.identity().then((account) => {
             this.currentAccount = account;
         });
@@ -115,4 +116,49 @@ export class <%= entityAngularName %>Component implements OnInit, OnDestroy {
     private onError(errorMessage: string) {
         this.jhiAlertService.error(errorMessage, null, null);
     }
+    <%_ for (idx in relationships){if (relationships[idx].relationshipType == 'many-to-one') {_%>
+        <%_ if (pagination == 'pagination' || pagination == 'pager'){ _%>
+        findBy<%=relationships[idx].relationshipNameCapitalized%>Id(id) {
+            this.<%= entityInstance %>Service.findBy<%=relationships[idx].relationshipNameCapitalized%>Id(id,
+                    {page: this.page - 1,
+                    size: this.itemsPerPage,
+                    sort: this.sort()}
+                )
+                .subscribe(
+                    (res: HttpResponse<I<%= entityAngularName %>[]>) => this.paginate<%= entityClassPlural %>(res.body, res.headers),
+                    (res: HttpErrorResponse) => this.onError(res.message)
+                    );
+        }
+            <%_ } else {_%>
+        findBy<%=relationships[idx].relationshipNameCapitalized%>Id(id) {
+            this.<%= entityInstance %>Service.findBy<%=relationships[idx].relationshipNameCapitalized%>Id(id).subscribe(
+                (res: Response) => {
+                    this.<%= entityInstancePlural %> = res.json;
+                },
+                (res: ResponseWrapper) => this.onError(res.json)
+            );
+        }
+
+               <%_ } _%>
+                <%_ } _%>
+                <%_ } _%>
+       loadFindBy() {
+            this.routeSub = this.activatedRoute.params.subscribe((params) => {
+                if (params['id']) {
+                    switch (this.findBy) {<%_ for (idx in relationships){
+                        if (relationships[idx].relationshipType === 'many-to-one') { %>
+                        case '<%=relationships[idx].otherEntityName%>':
+                            this.findBy<%=relationships[idx].relationshipNameCapitalized%>Id(params['id']);
+                            break;
+                <%_ } _%><%_ } _%>
+                default : this.loadAll()
+                break;
+                    }
+                }
+                else
+                {
+                    this.loadAll();
+                }
+            });
+        }
 }

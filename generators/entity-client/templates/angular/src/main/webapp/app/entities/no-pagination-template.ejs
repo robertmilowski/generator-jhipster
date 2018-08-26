@@ -22,6 +22,8 @@
     <%_ if (searchEngine === 'elasticsearch') { _%>
     currentSearch: string;
     <%_ } _%>
+    routeSub: any;
+    findBy: any;
 
     constructor(
         private <%= entityInstance %>Service: <%= entityAngularName %>Service,
@@ -33,6 +35,7 @@
         <%_ if (searchEngine === 'elasticsearch') { _%>
         private activatedRoute: ActivatedRoute,
         <%_ } _%>
+        this.findBy = data['findBy'];
         private principal: Principal
     ) {
         <%_ if (searchEngine === 'elasticsearch') { _%>

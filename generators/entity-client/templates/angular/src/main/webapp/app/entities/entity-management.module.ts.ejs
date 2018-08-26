@@ -34,6 +34,20 @@ import {
     <%= entityInstance %>PopupRoute
 } from './';
 
+<%_
+
+Object.keys(differentRelationships).forEach(key => {
+    if (differentRelationships[key].some(rel => rel.otherEntityName!==entityInstance && (rel.relationshipType === 'one-to-many'
+        || (rel.relationshipType === 'one-to-one' )
+        || (rel.relationshipType === 'many-to-many' && rel.ownerSide === true))
+        )) {
+        const rel = differentRelationships[key][0];
+_%>
+import { <%= rel.otherEntityModuleName %> } from '../<%= rel.otherEntityModulePath %>/<%= rel.otherEntityModulePath %>.module';
+import { <%= rel.otherEntityNameCapitalized %>Component } from '../<%= rel.otherEntityModulePath %>/<%= rel.otherEntityModulePath %>.component';
+<%_ }
+});_%>
+
 const ENTITY_STATES = [
     ...<%= entityInstance %>Route,
     ...<%= entityInstance %>PopupRoute,
@@ -45,7 +59,17 @@ const ENTITY_STATES = [
         <%_ Object.keys(differentRelationships).forEach(key => {
               if (key === 'User') { _%>
         <%= angularXAppName %>AdminModule,
-        <%_ }}); _%>
+        <%_ }
+        if (differentRelationships[key].some(rel => rel.otherEntityName!==entityInstance && (rel.relationshipType === 'one-to-many' ))) {
+        let rel = differentRelationships[key][0];
+    _%>
+        <%= rel.otherEntityModuleName %>,
+    <%_ }
+    if (differentRelationships[key].some(rel => (rel.relationshipType === 'one-to-one' || (rel.relationshipType === 'many-to-many' )))) {
+        let rel = differentRelationships[key][0];_%>
+//      <%= rel.otherEntityModuleName %>,  // Issue with <%= rel.relationshipType %>
+    <%_ }
+        }); _%>
         RouterModule.forChild(ENTITY_STATES)
     ],
     declarations: [
@@ -60,7 +84,17 @@ const ENTITY_STATES = [
         <%= entityAngularName %>UpdateComponent,
         <%= entityAngularName %>DeleteDialogComponent,
         <%= entityAngularName %>DeletePopupComponent,
-    ],
+        <%_
+        Object.keys(differentRelationships).forEach(key => {
+            if (differentRelationships[key].some(rel => rel.otherEntityName!==entityInstance && (rel.relationshipType === 'one-to-many'
+                || (rel.relationshipType === 'one-to-one' )
+                || (rel.relationshipType === 'many-to-many' && rel.ownerSide === true)))) {
+                const rel = differentRelationships[key][0];
+        _%>
+        <%= rel.otherEntityNameCapitalized %>Component,
+        <%_ }
+        }); _%>
+        ],
     schemas: [CUSTOM_ELEMENTS_SCHEMA]
 })
 export class <%= angularXAppName %><%= entityAngularName %>Module {}

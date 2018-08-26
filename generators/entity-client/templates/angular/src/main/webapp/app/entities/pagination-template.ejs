@@ -35,6 +35,9 @@
     previousPage: any;
     reverse: any;
     <%_ } _%>
+    routeSub: any;
+    findBy: any;
+
 
     constructor(
         private <%= entityInstance %>Service: <%= entityAngularName %>Service,
@@ -55,6 +58,7 @@
             this.previousPage = data.pagingParams.page;
             this.reverse = data.pagingParams.ascending;
             this.predicate = data.pagingParams.predicate;
+            this.findBy = data['findBy'];
         });
         <%_ if (searchEngine === 'elasticsearch') { _%>
         this.currentSearch = this.activatedRoute.snapshot && this.activatedRoute.snapshot.params['search'] ?

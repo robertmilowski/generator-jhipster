@@ -77,6 +77,16 @@ export class <%= entityAngularName %>Service {
         return this.http.delete<any>(`${this.resourceUrl}/${id}`, { observe: 'response'});
     }
 
+    <%_ for (idx in relationships) { _%>
+        <%_ if (relationships[idx].relationshipType === 'many-to-one') { _%>
+        findBy<%=relationships[idx].relationshipNameCapitalized%>Id(id, req?: any): Observable<EntityArrayResponseType> {
+            const options = createRequestOption(req);
+            return this.http.get<I<%= entityAngularName %>[]>(`${this.resourceUrl}/?<%=relationships[idx].otherEntityName%>Id.equals=${id}`, { params: options, observe: 'response' })
+                <% if (fieldsContainDate) { %>.pipe(map((res: EntityArrayResponseType) => this.convertDateArrayFromServer(res)))<% } %>;
+     }
+        <%_ } _%>
+    <%_ } _%>
+
     <%_ if (searchEngine === 'elasticsearch') { _%>
     search(req?: any): Observable<EntityArrayResponseType> {
         const options = createRequestOption(req);

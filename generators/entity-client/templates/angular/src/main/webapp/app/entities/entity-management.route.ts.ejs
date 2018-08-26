@@ -38,6 +38,16 @@ import {
 } from './<%= entityFileName %>-delete-dialog.component';
 <%_ } _%>
 import { I<%= entityAngularName %> } from 'app/shared/model/<%= entityModelFileName %>.model';
+<%_
+Object.keys(differentRelationships).forEach(key => {
+    if (differentRelationships[key].some(rel => (rel.relationshipType === 'one-to-many'
+        || (rel.relationshipType === 'one-to-one' )
+        || (rel.relationshipType === 'many-to-many' && rel.ownerSide === true)))) {
+        const rel = differentRelationships[key][0];
+_%>
+import { <%= rel.otherEntityNameCapitalized %>Component } from '../<%= rel.otherEntityModulePath %>/<%= rel.otherEntityModulePath %>.component';
+<%_ }
+}); _%>
 
 @Injectable({providedIn: 'root'})
 export class <%= entityAngularName %>Resolve implements Resolve<I<%= entityAngularName %>> {
@@ -84,7 +94,32 @@ export const <%= entityInstance %>Route: Routes = [
             authorities: ['ROLE_USER'],
             pageTitle: <% if (enableTranslation){ %>'<%= angularAppName %>.<%= entityTranslationKey %>.home.title'<% }else{ %>'<%= entityClassPlural %>'<% } %>
         },
-        canActivate: [UserRouteAccessService]
+        canActivate: [UserRouteAccessService],
+        children: [
+        <%_
+        Object.keys(differentRelationships).forEach(key => {
+            if (differentRelationships[key].some(rel => rel.otherEntityName!==entityInstance && (rel.relationshipType === 'one-to-many'
+                || (rel.relationshipType === 'one-to-one' )
+                || (rel.relationshipType === 'many-to-many' && rel.ownerSide === true))
+                )) {
+                const rel = differentRelationships[key][0];
+        _%>
+              {
+                path: '<%= rel.otherEntityName %>/:id',
+                component: <%= rel.otherEntityNameCapitalized %>Component,
+                <%_ if (pagination === 'pagination' || pagination === 'pager'){ _%>
+                resolve: {
+                  'pagingParams': JhiResolvePagingParams
+                },<%}%>
+                data: {
+                  authorities: ['ROLE_USER'],
+                  findBy: '<%= entityInstance %>'
+                },
+                outlet: 'tab'
+              },
+        <%_ }
+        }); _%>
+            ],
     },
     {
         path: '<%= entityUrl %>/new',

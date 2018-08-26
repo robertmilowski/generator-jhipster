@@ -17,18 +17,35 @@
  limitations under the License.
 -%>
 <div class="row justify-content-center">
-    <div class="col-8">
+    <div class="col-10">
         <div *ngIf="<%= entityInstance %>">
-            <h2><span jhiTranslate="<%= i18nKeyPrefix %>.detail.title"><%= entityClassHumanized %></span> {{<%= entityInstance %>.id}}</h2>
+            <div class="row">
+                <div class="col-6">
+                    <h2><span jhiTranslate="<%= i18nKeyPrefix %>.detail.title"><%= entityClassHumanized %></span> {{<%= entityInstance %>.id}}</h2>
+                </div>
+                <div class="col-6 text-right">
+                    <button type="submit"
+                            (click)="previousState()"
+                            class="btn btn-info">
+                        <fa-icon [icon]="'arrow-left'"></fa-icon>&nbsp;<span jhiTranslate="entity.action.back"> Back</span>
+                    </button>
+
+                    <button type="button"
+                            [routerLink]="['/<%= entityUrl %>', <%= entityInstance %>.id, 'edit']"
+                            class="btn btn-primary">
+                        <fa-icon [icon]="'pencil-alt'"></fa-icon>&nbsp;<span jhiTranslate="entity.action.edit"> Edit</span>
+                    </button>
+                </div>
+            </div>
             <hr>
             <<%= jhiPrefixDashed %>-alert-error></<%= jhiPrefixDashed %>-alert-error>
-            <dl class="row-md jh-entity-details">
+            <dl class="row jh-entity-details">
                 <%_ for (idx in fields) {
                 const fieldName = fields[idx].fieldName;
                 const fieldType = fields[idx].fieldType;
                 const fieldTypeBlobContent = fields[idx].fieldTypeBlobContent; _%>
-                <dt><span jhiTranslate="<%= i18nKeyPrefix %>.<%= fieldName %>"<% if (fields[idx].javadoc) { if (enableTranslation) { %> [ngbTooltip]="'<%= i18nKeyPrefix %>.help.<%= fieldName %>' | translate"<% } else { %> ngbTooltip="<%= fields[idx].javadoc %>"<% } } %>><%= fields[idx].fieldNameHumanized %></span></dt>
-                <dd>
+                <dt class="col-md-2"><span jhiTranslate="<%= i18nKeyPrefix %>.<%= fieldName %>"<% if (fields[idx].javadoc) { if (enableTranslation) { %> [ngbTooltip]="'<%= i18nKeyPrefix %>.help.<%= fieldName %>' | translate"<% } else { %> ngbTooltip="<%= fields[idx].javadoc %>"<% } } %>><%= fields[idx].fieldNameHumanized %></span></dt>
+                <dd class="col-md-4">
                     <%_ if (fields[idx].fieldIsEnum) { _%>
                     <span jhiTranslate="{{'<%= angularAppName %>.<%= fieldType %>.' + <%= entityInstance %>.<%= fieldName %>}}">{{<%= entityInstance %>.<%= fieldName %>}}</span>
                     <%_ } else if (['byte[]', 'ByteBuffer'].includes(fieldType) && fieldTypeBlobContent === 'image') { _%>
@@ -38,6 +55,12 @@
                         </a>
                         {{<%= entityInstance %>.<%= fieldName %>ContentType}}, {{byteSize(<%= entityInstance %>.<%= fieldName %>)}}
                     </div>
+                    <%_ } else if (fieldType === 'LocalDate') { _%>
+                        <span>{{<%= entityInstance %>.<%= fieldName %> | date:'yyyy-MM-dd'}}</span>
+                    <%_ } else if (fieldType === 'Instant') { _%>
+                        <span>{{<%= entityInstance %>.<%= fieldName %> | date:'yyyy-MM-dd hh:mm'}}</span>
+                    <%_ } else if (fieldType === 'ZonedDateTime') { _%>
+                        <span>{{<%= entityInstance %>.<%= fieldName %> | date:'yyyy-MM-dd hh:mm'}}</span>
                     <%_ } else if (['byte[]', 'ByteBuffer'].includes(fieldType) && fieldTypeBlobContent === 'any') { _%>
                     <div *ngIf="<%= entityInstance %>.<%= fieldName %>">
                         <a (click)="openFile(<%= entityInstance %>.<%= fieldName %>ContentType, <%= entityInstance %>.<%= fieldName %>)" jhiTranslate="entity.action.open">open</a>
@@ -62,8 +85,8 @@
                 if (relationshipType === 'many-to-one'
                 || (relationshipType === 'one-to-one' && ownerSide === true)
                 || (relationshipType === 'many-to-many' && ownerSide === true)) { _%>
-                <dt><span jhiTranslate="<%= i18nKeyPrefix %>.<%= relationshipName %>"><%= relationshipNameHumanized %></span></dt>
-                <dd>
+                <dt class="col-md-2"><span jhiTranslate="<%= i18nKeyPrefix %>.<%= relationshipName %>"><%= relationshipNameHumanized %></span></dt>
+                <dd class="col-md-4">
                     <%_ if (otherEntityName === 'user') { _%>
                     <%_ if (relationshipType === 'many-to-many') { _%>
                     <span *ngFor="let <%= relationshipFieldName %> of <%= entityInstance %>.<%= relationshipFieldNamePlural %>; let last = last">
@@ -97,18 +120,35 @@
                 <%_ } _%>
                 <%_ } _%>
             </dl>
-
-            <button type="submit"
-                    (click)="previousState()"
-                    class="btn btn-info">
-                <fa-icon [icon]="'arrow-left'"></fa-icon>&nbsp;<span jhiTranslate="entity.action.back"> Back</span>
-            </button>
-
-            <button type="button"
-                    [routerLink]="['/<%= entityUrl %>', <%= entityInstance %>.id, 'edit']"
-                    class="btn btn-primary">
-                <fa-icon [icon]="'pencil-alt'"></fa-icon>&nbsp;<span jhiTranslate="entity.action.edit"> Edit</span>
-            </button>
+            <%_ if (    fieldsContainOneToMany==true
+            || fieldsContainNoOwnerOneToOne==true
+            || fieldsContainOwnerManyToMany==true) { _%>
+            <ul class="nav nav-tabs">
+                <%_ for (idx in relationships) {
+                const relationshipType = relationships[idx].relationshipType;
+                const ownerSide = relationships[idx].ownerSide;
+                const relationshipName = relationships[idx].relationshipName;
+                const relationshipFieldName = relationships[idx].relationshipFieldName;
+                const relationshipFieldNamePlural = relationships[idx].relationshipFieldNamePlural;
+                const relationshipNameHumanized = relationships[idx].relationshipNameHumanized;
+                const otherEntityName = relationships[idx].otherEntityName;
+                const otherEntityStateName = relationships[idx].otherEntityStateName;
+                const otherEntityField = relationships[idx].otherEntityField;
+                const otherEntityFieldCapitalized = relationships[idx].otherEntityFieldCapitalized;
+                if ((relationshipType === 'one-to-many')
+                || (relationshipType === 'many-to-many' && ownerSide === true)) { _%>
+                <li class="nav-item">
+                    <a class="nav-link" [routerLink]="[{ outlets: { 'tab': '<%= otherEntityName %>/' + <%= entityInstance %>.id }}]">
+                        <span jhiTranslate="<%= i18nKeyPrefix %>.<%= relationshipName %>"><%= relationshipNameHumanized %> </span>
+                    </a>
+                </li>
+                <%_ } _%>
+                <%_ } _%>
+            </ul>
+                <div role="tabpanel" class="tab-content tab-pane">
+                    <router-outlet name="tab"></router-outlet>
+                </div>
+                <%_ } _%>
         </div>
     </div>
 </div>
